@@ -9,8 +9,8 @@ go get github.com/tengzbiao/redlock-go
 ```
 servers := []string{"redis://123456@127.0.0.1:6379/0"}
 lock := NewRedLock(servers)
-// 加锁5秒
-ret := lock.Lock("teacher:1", 5)
+// 加锁200毫秒
+ret := lock.Lock("teacher:1", 200)
 // 释放锁
 defer lock.Unlock(ret)
 

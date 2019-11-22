@@ -18,8 +18,8 @@ type RedLock struct {
 
 func NewRedLock(servers []string) *RedLock {
 	return &RedLock{
-		retryDelay: 200,
-		retryCount: 10,
+		retryDelay: 100,
+		retryCount: 5,
 		clockDrift: 0.01,
 		quorum:     len(servers)/2 + 1,
 		pools:      newPools(servers),
@@ -36,7 +36,7 @@ type LockRet struct {
 func (r *RedLock) Lock(resource string, ttl int) (lockRet LockRet) {
 	lockRet.Resource = resource
 	lockRet.Token = uniqId()
-	// ttl单位为秒
+	// ttl单位为毫秒
 	for {
 		if r.retryCount == 0 {
 			return lockRet
@@ -50,8 +50,8 @@ func (r *RedLock) Lock(resource string, ttl int) (lockRet LockRet) {
 		// Add 2 milliseconds to the drift to account for Redis expires
 		// precision, which is 1 millisecond, plus 1 millisecond min drift
 		// for small TTLs.
-		drift := int64(float64(ttl*1000)*r.clockDrift) + 2
-		validityTime := int64(ttl*1000) - (time.Now().UnixNano()/1e6 - startTime) - drift
+		drift := int64(float64(ttl)*r.clockDrift) + 2
+		validityTime := int64(ttl) - (time.Now().UnixNano()/1e6 - startTime) - drift
 
 		if n >= r.quorum && validityTime > 0 {
 			lockRet.State = true
@@ -95,7 +95,7 @@ func (r *RedLock) lock(pool Pool, lockRet LockRet, ttl int) error {
 	conn := pool.Get()
 	defer conn.Close()
 
-	status, err := redis.String(conn.Do("SET", lockRet.Resource, lockRet.Token, "NX", "PX", ttl*1000))
+	status, err := redis.String(conn.Do("SET", lockRet.Resource, lockRet.Token, "NX", "PX", ttl))
 	if status == "" {
 		err = errors.New("lock failed")
 	}

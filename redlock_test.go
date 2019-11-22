@@ -8,10 +8,8 @@ import (
 func TestRedLock(t *testing.T) {
 	servers := []string{"redis://127.0.0.1:6379/0"}
 	lock := NewRedLock(servers)
-	ret := lock.Lock("teacher:1", 60)
+	ret := lock.Lock("teacher:1", 200)
 	defer lock.Unlock(ret)
-
-	time.Sleep(2 * time.Second)
 
 	t.Log(ret)
 }
